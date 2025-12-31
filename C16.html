@@ -52,7 +52,6 @@ body{
   margin:0;
   padding:clamp(10px, 3vw, 20px);
   font-family:"KaiTi";
-  background:var(--bg);
   font-size:var(--fs);
   line-height:1.35;
   font-weight:bold;
@@ -139,7 +138,7 @@ h2{
   border-radius:14px;
   cursor:grab;
   box-shadow:var(--shadow);
-  margin-top:0px
+  margin-top:0px;
 }
 
 .options .option{
@@ -147,7 +146,7 @@ h2{
   white-space: nowrap;      /* 文字不换行 */
   overflow-wrap: normal;
   word-break: keep-all;
-  flex: 0 0 calc(20% - (var(--gap) / 2)); /* 每个占半行，强制两列 */
+  flex: 0 0 calc(20% - (var(--gap) / 2)); 
 }
 .drop-box{
   flex: 0 0 calc(50% - (var(--gap) / 2)); /* 每个占半行，强制两列 */
@@ -291,10 +290,9 @@ h2{
   z-index: 1;
 }
 
-/* 统一做成图片按钮 */
 #controls .img-btn{
-  width: clamp(80px, 22vw, 160px);   /* 按钮宽度，可自行调 */
-  height: clamp(26px, 7vw, 60px);    /* 按钮高度，可自行调 */
+  width: clamp(100px, 42vw, 2200px);   /* 按钮宽度，可自行调 */
+  height: clamp(40px, 14vw, 80px);    /* 按钮高度，可自行调 */
   border: none;
   padding: 0;
   cursor: pointer;
