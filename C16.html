@@ -260,6 +260,14 @@ h2{
   }
 }
 
+/* 手机端：只放大底部两个图片按钮 */
+@media (max-width: 700px){
+  #controls .img-btn{
+    width: clamp(150px, 60vw, 220px);  /* ← 改这里：手机按钮宽 */
+    height: clamp(80px, 20vw, 120px);   /* ← 改这里：手机按钮高 */
+  }
+}
+
 /* ===== 底部按钮（PNG） ===== */
 #controls{
   display:flex;
@@ -291,8 +299,8 @@ h2{
 }
 
 #controls .img-btn{
-  width: clamp(150px, 50vw, 220px);   /* 按钮宽度，可自行调 */
-  height: clamp(80px, 20vw, 80px);    /* 按钮高度，可自行调 */
+  width: clamp(80px, 22vw, 160px);   /* 按钮宽度，可自行调 */
+  height: clamp(26px, 7vw, 60px);    /* 按钮高度，可自行调 */
   border: none;
   padding: 0;
   cursor: pointer;
@@ -822,4 +830,3 @@ enforceScrollLimit();
 
 </body>
 </html>
-
