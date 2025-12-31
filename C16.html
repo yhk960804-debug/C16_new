@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>一年级道德教育小游戏</title>
+
+<style>
+:root{
+  --bg:#fafafa;
+  --card:#ffffff;
+  --shadow:0 0 10px rgba(0,0,0,.08);
+  --gap:clamp(10px, 2.4vw, 20px);
+  --radius:16px;
+  --fs:clamp(20px, 3.8vw, 30px);
+  --h2:clamp(30px, 5.2vw, 56px);
+  --c2:#99DBF5;  /* 浅蓝 */
+  --c3:#A7ECEE;  /* 薄荷 */
+}
+
+*{ box-sizing:border-box; }
+
+.cornerTag{
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 10001;
+  pointer-events: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.cornerTag img{
+  height: 18px;
+  width: auto;
+  display: block;
+  flex: 0 0 auto;
+}
+.cornerTag > span{
+  font-size: 14px;
+  line-height: 1;
+  color: rgba(0,0,0,.75);
+  white-space: nowrap;
+}
+.cornerTag .en{
+  font-size: 12px;
+  display: inline-block;
+  transform: translateY(-0.03em);
+}
+
+body{
+  margin:0;
+  padding:clamp(10px, 3vw, 20px);
+  font-family:"KaiTi";
+  background:var(--bg);
+  font-size:var(--fs);
+  line-height:1.35;
+  font-weight:bold;
+  background: linear-gradient(180deg, var(--c2), #ffffff 55%, var(--c3));
+}
+
+.lead{ margin: 4px 0 14px; }
+
+.container{
+  max-width:1100px;
+  margin:0 auto;
+}
+
+.section{
+  background:var(--card);
+  border-radius:var(--radius);
+  padding:clamp(14px, 3vw, 24px);
+  margin:0 0 var(--gap);
+  box-shadow:var(--shadow);
+}
+
+h2{
+  font-family:"KaiTi";
+  font-size:var(--h2);
+  text-align:center;
+}
+
+#pageTitle{
+  width: min(1200px, 100%);
+  margin: 20px auto 0px;
+  text-align: center;
+  font-size: var(--h2);
+  font-weight: 800;
+  line-height: 2;
+
+  text-shadow:
+    -2px -2px 0 #fff,  2px -2px 0 #fff,
+    -2px  2px 0 #fff,  2px  2px 0 #fff,
+     0   -2px 0 #fff,  0    2px 0 #fff,
+    -2px  0   0 #fff,  2px  0   0 #fff,
+     0    4px 10px rgba(0,0,0,.18);
+}
+
+/* 通用提示 */
+.success{
+  text-align:center;
+  font-size:clamp(26px, 4.6vw, 40px);
+  margin-top:clamp(10px, 2.2vw, 18px);
+  display:none;
+  color:#1aa260;
+}
+.hint{
+  text-align:center;
+  font-size:clamp(22px, 4vw, 34px);
+  margin-top:clamp(10px, 2vw, 16px);
+  display:none;
+  color:#323232;
+}
+
+/* ========= 第一题 ========= */
+.qblock{
+  display:grid;
+  gap:var(--gap);
+  grid-template-columns:1fr; /* 任何尺寸都上下排列（选项永远在上） */
+}
+
+/* 选项区 / 图片区 */
+.options, .answers{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:var(--gap);
+}
+
+/* draggable 触控优化 */
+.option, .word{
+  touch-action:none;
+  user-select:none;
+}
+
+.option{
+  background: linear-gradient(180deg, #D4F6FF, #C6E7FF);
+  padding:clamp(10px, 1.3vw, 10px) clamp(10px, 1.3vw, 10px);
+  border-radius:14px;
+  cursor:grab;
+  box-shadow:var(--shadow);
+  margin-top:0px
+}
+
+.options .option{
+  text-align: center;
+  white-space: nowrap;      /* 文字不换行 */
+  overflow-wrap: normal;
+  word-break: keep-all;
+  flex: 0 0 calc(20% - (var(--gap) / 2)); /* 每个占半行，强制两列 */
+}
+.drop-box{
+  flex: 0 0 calc(50% - (var(--gap) / 2)); /* 每个占半行，强制两列 */
+  width:clamp(140px, 24vw, 200px);
+  height:clamp(170px, 26vw, 240px);
+  border:2px dashed #aaa;
+  border-radius:18px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-start;
+  padding-top:8px;
+  background:#fff;
+  text-align: center;
+}
+
+.drop-box img{
+  width:100%;
+  height:clamp(95px, 16vw, 150px);
+  object-fit:contain;
+  pointer-events:none;
+}
+
+/* ========= 第三题 ========= */
+.words{
+  display:flex;
+  flex-wrap:wrap;
+  gap:var(--gap);
+  justify-content:center;
+  margin-top:clamp(8px, 2vw, 14px);
+}
+
+.word{
+  background:#fff3e0;
+  padding:clamp(10px, 5vw, 10px) clamp(10px, 5vw, 10px) ;
+  border-radius:12px;
+  cursor:grab;
+  box-shadow:var(--shadow);
+}
+
+.answer-line{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:clamp(6px, 1.5vw, 10px);
+  margin-top:clamp(10px, 2.2vw, 18px);
+  flex-wrap:wrap;
+}
+
+.slot{
+  border:2px dashed #aaa;
+  border-radius:12px;
+  min-height:clamp(46px, 8vw, 56px);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:#fff;
+  padding:4px 4px;
+}
+
+.slot.len2{ width: 4em; }
+.slot.len3{ width: 5em; }
+.slot.len4{ width: 6em; }
+
+.punct{
+  font-size:var(--fs);
+  line-height:1;
+}
+
+/* 放进格子后的词 */
+.slot .word{
+  margin:0;
+  box-shadow:none;
+}
+.locked{
+  opacity: .45;
+  filter: grayscale(.15);
+}
+.locked, .locked *{
+  pointer-events: none;  /* 锁住交互 */
+}
+
+/* ===== 手机：q1a/q1b 格子固定 2x2；选项同一排 ===== */
+@media (min-width: 900px){
+  :root{
+    --fs: 22px;   /* 电脑内文字体 */
+    --h2: 40px;   /* 电脑标题字体 */
+  }
+}
+
+@media (max-width: 700px){
+  #q1a .options, #q1b .options{
+    flex-wrap: wrap;
+    overflow-x: visible;
+    -webkit-overflow-scrolling: touch;
+    justify-content: center;
+    gap: 14px;
+    padding: 6px 4px 10px;
+  }
+
+  #q1a .answers, #q1b .answers{
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    justify-items: center;
+    gap: 14px;
+  }
+
+  #q1a .drop-box, #q1b .drop-box{
+    width: 100%;
+    max-width: 230px;
+  }
+}
+
+/* ===== 底部按钮（PNG） ===== */
+#controls{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:2px;
+  margin:24px 0 10px;
+  padding-bottom: 10px;
+  background: transparent;
+  position: sticky;
+  bottom: 0;
+  z-index: 50;
+}
+
+#controls::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background: linear-gradient(180deg, rgba(255,255,255,.0), rgba(255,255,255,.85));
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 0;
+  pointer-events:none;
+}
+
+#controls button{
+  position: relative; /* 确保按钮在半透明层上面 */
+  z-index: 1;
+}
+
+/* 统一做成图片按钮 */
+#controls .img-btn{
+  width: clamp(80px, 22vw, 160px);   /* 按钮宽度，可自行调 */
+  height: clamp(26px, 7vw, 60px);    /* 按钮高度，可自行调 */
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  background: transparent no-repeat center / contain;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 两张图 */
+#controls .img-restart{
+  background-image: url("images/btn_restart.png");
+}
+#controls .img-home{
+  background-image: url("images/btn_home.png");
+}
+
+/* 按下反馈 */
+#controls .img-btn:active{
+  transform: scale(0.98);
+}
+
+</style>
+</head>
+
+<body>
+<div class="cornerTag">
+  <img src="images/Delima.png" alt="">
+  <span>一年级道德教育 <span class="en">(KP2027)</span> 第 <span class="en">16</span> 课 第 <span class="en">69</span> 页</span>
+  </div>
+<div class="container">
+<h2 id="pageTitle">马来西亚有哪些族群？</h2>
+  <!-- ================= 第一题（外层题卡） ================= -->
+  <div class="section">
+    <p class="lead">把正确的答案拖到图片下面。</p>
+
+    <!-- q1a -->
+    <div class="section" id="q1a">
+      <div class="qblock">
+        <div class="options" aria-label="q1a options">
+          <div class="option" draggable="true">华族</div>
+          <div class="option" draggable="true">印度族</div>
+          <div class="option" draggable="true">马来族</div>
+          <div class="option" draggable="true">玛美里族</div>
+        </div>
+
+        <div class="answers" aria-label="q1a answers">
+          <div class="drop-box" data-answer="马来族"><img src="images/malay.png" alt="马来族"></div>
+          <div class="drop-box" data-answer="华族"><img src="images/chinese.png" alt="华族"></div>
+          <div class="drop-box" data-answer="玛美里族"><img src="images/mahmeri.png" alt="玛美里族"></div>
+          <div class="drop-box" data-answer="印度族"><img src="images/indian.png" alt="印度族"></div>
+        </div>
+      </div>
+      <div class="success">🎉回答正确！🌟</div>
+      <div class="hint">🤔 想一想，再回答 🤍</div>
+    </div>
+
+    <!-- q1b -->
+    <div class="section" id="q1b">
+      <div class="qblock">
+        <div class="options" aria-label="q1b options">
+          <div class="option" draggable="true">锡克族</div>
+          <div class="option" draggable="true">伊班族</div>
+          <div class="option" draggable="true">卡达山杜顺族</div>
+          <div class="option" draggable="true">峇峇娘惹</div>
+        </div>
+
+        <div class="answers" aria-label="q1b answers">
+          <div class="drop-box" data-answer="伊班族"><img src="images/iban.png" alt="伊班族"></div>
+          <div class="drop-box" data-answer="卡达山杜顺族"><img src="images/kadazan.png" alt="卡达山杜顺族"></div>
+          <div class="drop-box" data-answer="峇峇娘惹"><img src="images/babanyoya.png" alt="峇峇娘惹"></div>
+          <div class="drop-box" data-answer="锡克族"><img src="images/sikh.png" alt="锡克族"></div>
+        </div>
+      </div>
+      <div class="success">🎉回答正确！🌟</div>
+      <div class="hint">🤔 想一想，再回答 🤍</div>
+    </div>
+
+  </div><!-- /第一题外层 section -->
+
+  <!-- ================= 第三题 ================= -->
+  <div class="section" id="q2">
+    <h2>排一排句子</h2>
+
+    <div class="words" id="q2Words">
+      <div class="word" draggable="true">真开心</div>
+      <div class="word" draggable="true">学习</div>
+      <div class="word" draggable="true">各族同学</div>
+      <div class="word" draggable="true">一起</div>
+      <div class="word" draggable="true">我和</div>
+    </div>
+
+    <div class="answer-line" id="q2Answer">
+      <div class="slot len2" data-answer="我和"></div>
+      <div class="slot len4" data-answer="各族同学"></div>
+      <div class="slot len2" data-answer="一起"></div>
+      <div class="slot len2" data-answer="学习"></div>
+      <span class="punct">，</span>
+      <div class="slot len3" data-answer="真开心"></div>
+      <span class="punct">！</span>
+    </div>
+
+    <div class="success" id="success3">
+      🌟恭喜回答正确！🎉<br><br>
+      <div class="hint">🤔 想一想，再回答 🤍</div>
+      <b>你懂得尊重各族群，真棒！</b>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<footer id="controls">
+  <!-- 左边：返回 -->
+  <button type="button" id="backBtn" class="img-btn img-home" aria-label="返回"></button>
+
+  <!-- 右边：重新开始 -->
+  <button type="button" id="restartAll" class="img-btn img-restart" aria-label="重新开始"></button>
+</footer>
+
+
+<script>
+function flashHint(sectionEl){
+  if(!sectionEl) return;
+  const hint = sectionEl.querySelector(".hint");
+  if(!hint) return;
+
+  hint.style.display = "block";
+
+  // ====== 你可以调的数值 ======
+  const HINT_GAP = 12;  // hint 距离底条上缘留多少像素（你可改 6 / 20 / 30）
+  // ===========================
+
+  requestAnimationFrame(()=>{
+    const rect = hint.getBoundingClientRect();
+    const safeBottom = window.innerHeight - CONTROLS_H; // 底条上缘
+
+    // 如果 hint 被底条盖到（rect.bottom 超过 safeBottom），只滚“刚刚好”的距离
+    if(rect.bottom > safeBottom - HINT_GAP){
+      const delta = rect.bottom - (safeBottom - HINT_GAP);
+      window.scrollBy({ top: delta, behavior: "smooth" });
+    }
+    // 如果 hint 在屏幕上方看不到，也只滚刚好让它出现
+    else if(rect.top < 0 + HINT_GAP){
+      const delta = rect.top - HINT_GAP;
+      window.scrollBy({ top: delta, behavior: "smooth" });
+    }
+  });
+
+  if(hint._t) clearTimeout(hint._t);
+  hint._t = setTimeout(()=>{ hint.style.display = "none"; }, 2000);
+}
+
+
+// ====== 你可以调的数值 ======
+const CONTROLS_H = 120;  // 底条大约高度（含 padding），你可以改大/改小
+const LOCK_PAD   = 16;   // 允许多滚一点点的缓冲（越小越“严格”）
+
+let unlockedQ1B = false;
+let unlockedQ2  = false;
+
+function lockSection(id, locked){
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.classList.toggle("locked", locked);
+  el.setAttribute("aria-disabled", locked ? "true" : "false");
+}
+
+function getScrollLimitY(){
+  // 没解锁 Q1B：最多看到 q1a
+  // 解锁 Q1B 但没解锁 Q2：最多看到 q1b
+  // 解锁 Q2：最多看到 q2（之后你要不要解除限制可再说）
+  const anchorId = !unlockedQ1B ? "q1a" : (!unlockedQ2 ? "q1b" : "q2");
+  const el = document.getElementById(anchorId);
+  if(!el) return Infinity;
+
+  const rect = el.getBoundingClientRect();
+  const bottomDocY = window.scrollY + rect.bottom;
+
+  // safeBottom = 屏幕底条上缘
+  const safeBottom = window.innerHeight - CONTROLS_H;
+
+  // 让 anchor 的底部最多到 safeBottom 上方一点点
+  return Math.max(0, bottomDocY - safeBottom + LOCK_PAD);
+}
+
+let _locking = false;
+function enforceScrollLimit(){
+  if(_locking) return;
+  const maxY = getScrollLimitY();
+  if(window.scrollY > maxY){
+    _locking = true;
+    window.scrollTo({ top: maxY, behavior: "auto" });
+    _locking = false;
+  }
+}
+window.addEventListener("scroll", enforceScrollLimit, { passive: true });
+window.addEventListener("resize", enforceScrollLimit);
+
+/* ================= 桌面端：HTML5 drag & drop ================= */
+let dragged = null;
+
+document.querySelectorAll(".option, .word").forEach(el=>{
+  el.addEventListener("dragstart", e => dragged = e.target);
+});
+
+document.querySelectorAll(".drop-box").forEach(box=>{
+  box.addEventListener("dragover", e => e.preventDefault());
+  box.addEventListener("drop", e=>{
+    e.preventDefault();
+    if(!dragged) return;
+
+    const text = dragged.innerText.trim();
+    if(!dragged.classList.contains("option")) return; // 只允许 option 投放到 drop-box
+    if(text !== box.dataset.answer){
+  flashHint(box.closest(".section")); // q1a 或 q1b
+  return;
+}
+    const existing = box.querySelector(".option");
+    if(existing){
+      box.closest(".section").querySelector(".options").appendChild(existing);
+    }
+
+    box.appendChild(dragged);
+    dragged = null;
+    checkQ1();
+  });
+});
+
+// 第三题：slot drop
+document.querySelectorAll("#q2Answer .slot").forEach(slot=>{
+  slot.addEventListener("dragover", e => e.preventDefault());
+  slot.addEventListener("drop", e=>{
+    e.preventDefault();
+    if(!dragged) return;
+    if(!dragged.classList.contains("word")) return;
+
+    const existing = slot.querySelector(".word");
+    if(existing) document.getElementById("q2Words").appendChild(existing);
+
+    slot.appendChild(dragged);
+    if(dragged.innerText.trim() !== slot.dataset.answer){
+      flashHint(document.getElementById("q2"));
+}
+
+    dragged = null;
+    checkQ2();
+  });
+});
+
+// 第三题：拖回选项区
+const q2Words = document.getElementById("q2Words");
+q2Words.addEventListener("dragover", e => e.preventDefault());
+q2Words.addEventListener("drop", e=>{
+  e.preventDefault();
+  if(!dragged) return;
+  if(!dragged.classList.contains("word")) return;
+  q2Words.appendChild(dragged);
+  dragged = null;
+  checkQ2();
+});
+
+/* ================= 手机端：Pointer 触控拖放 ================= */
+let pointerDrag = { el:null, ghost:null, offsetX:0, offsetY:0, active:false };
+
+function isTouchPointer(e){
+  return e.pointerType === "touch" || e.pointerType === "pen";
+}
+
+function startPointerDrag(e, el){
+  pointerDrag.el = el;
+  pointerDrag.active = true;
+
+  const r = el.getBoundingClientRect();
+  pointerDrag.offsetX = e.clientX - r.left;
+  pointerDrag.offsetY = e.clientY - r.top;
+
+  const ghost = el.cloneNode(true);
+  ghost.style.position = "fixed";
+  ghost.style.left = (e.clientX - pointerDrag.offsetX) + "px";
+  ghost.style.top  = (e.clientY - pointerDrag.offsetY) + "px";
+  ghost.style.zIndex = 9999;
+  ghost.style.opacity = "0.9";
+  ghost.style.pointerEvents = "none";
+  ghost.style.transform = "scale(1.02)";
+  document.body.appendChild(ghost);
+  pointerDrag.ghost = ghost;
+}
+
+function movePointerDrag(e){
+  if(!pointerDrag.active || !pointerDrag.ghost) return;
+  pointerDrag.ghost.style.left = (e.clientX - pointerDrag.offsetX) + "px";
+  pointerDrag.ghost.style.top  = (e.clientY - pointerDrag.offsetY) + "px";
+}
+
+function endPointerDrag(e){
+  if(!pointerDrag.active) return;
+
+  const el = pointerDrag.el;
+  const ghost = pointerDrag.ghost;
+  const target = document.elementFromPoint(e.clientX, e.clientY);
+
+  // 1) 第一题：drop-box
+  const dropBox = target && target.closest && target.closest(".drop-box");
+  if(dropBox && el.classList.contains("option")){
+    const text = el.innerText.trim();
+
+    if(text === dropBox.dataset.answer){
+      const existing = dropBox.querySelector(".option");
+      if(existing){
+        dropBox.closest(".section").querySelector(".options").appendChild(existing);
+      }
+      dropBox.appendChild(el);
+      checkQ1();
+    }else{
+      flashHint(dropBox.closest(".section")); // 放错提示
+    }
+  }
+
+  // 2) 第二题：slot
+  const slot = target && target.closest && target.closest("#q2Answer .slot");
+  if(slot && el.classList.contains("word")){
+    const existing = slot.querySelector(".word");
+    if(existing) document.getElementById("q2Words").appendChild(existing);
+
+    slot.appendChild(el);
+
+    if(el.innerText.trim() !== slot.dataset.answer){
+      flashHint(document.getElementById("q2"));
+    }
+
+    checkQ2();
+  }
+
+  // 3) 第二题：拖回选项区
+  const wordsArea = target && target.closest && target.closest("#q2Words");
+  if(wordsArea && el.classList.contains("word")){
+    wordsArea.appendChild(el);
+    checkQ2();
+  }
+
+  if(ghost) ghost.remove();
+  pointerDrag = { el:null, ghost:null, offsetX:0, offsetY:0, active:false };
+}
+
+document.querySelectorAll(".option, .word").forEach(el=>{
+  el.addEventListener("pointerdown", (e)=>{
+    if(!isTouchPointer(e)) return;
+    e.preventDefault();
+    el.setPointerCapture(e.pointerId);
+    startPointerDrag(e, el);
+  });
+
+  el.addEventListener("pointermove", (e)=>{
+    if(!isTouchPointer(e)) return;
+    if(!pointerDrag.active) return;
+    e.preventDefault();
+    movePointerDrag(e);
+  });
+
+  el.addEventListener("pointerup", (e)=>{
+    if(!isTouchPointer(e)) return;
+    e.preventDefault();
+    endPointerDrag(e);
+  });
+
+  el.addEventListener("pointercancel", (e)=>{
+    if(!isTouchPointer(e)) return;
+    endPointerDrag(e);
+  });
+});
+
+/* ================= 检查逻辑 + reset ================= */
+let didAutoScroll = false;
+let didScrollToQ1b = false;
+let didScrollToQ2  = false;
+
+function isSectionDone(id){
+  const sec = document.getElementById(id);
+  if(!sec) return false;
+  return [...sec.querySelectorAll(".drop-box")].every(b => b.querySelector(".option"));
+}
+
+
+function isQ1AllDone(){
+  return ["q1a","q1b"].every(id=>{
+    const sec = document.getElementById(id);
+    if(!sec) return false;
+    return [...sec.querySelectorAll(".drop-box")]
+      .every(b => b.querySelector(".option"));
+  });
+}
+function checkQ1(){
+  const q1a = document.getElementById("q1a");
+  const q1b = document.getElementById("q1b");
+
+  const q1aDone = isSectionDone("q1a");
+  const q1bDone = isSectionDone("q1b");
+
+  // 显示各自 success
+  if(q1a && q1aDone) q1a.querySelector(".success").style.display = "block";
+  if(q1b && q1bDone) q1b.querySelector(".success").style.display = "block";
+
+  // 1) 完成 q1a -> 滚到 q1b（只触发一次）
+  if(q1aDone && !didScrollToQ1b){
+    didScrollToQ1b = true;
+    document.getElementById("q1b").scrollIntoView({ behavior:"smooth", block:"start" });
+  }
+
+  // 2) 完成 q1b -> 滚到第二题 q2（只触发一次；并且要求 q1a 也完成）
+  if(q1aDone && q1bDone && !didScrollToQ2){
+    didScrollToQ2 = true;
+    document.getElementById("q2").scrollIntoView({ behavior:"smooth", block:"start" });
+  }
+
+  // 如果之后被你“重置/变回未完成”，允许未来再次触发滚动
+  if(!q1aDone) didScrollToQ1b = false;
+  if(!(q1aDone && q1bDone)) didScrollToQ2 = false;
+
+  // ✅ 完成 q1a -> 解锁 q1b
+  if(q1aDone && !unlockedQ1B){
+  unlockedQ1B = true;
+  lockSection("q1b", false);
+  enforceScrollLimit();
+}
+
+// ✅ 完成 q1b（且 q1aDone）-> 解锁 q2
+if(q1aDone && q1bDone && !unlockedQ2){
+  unlockedQ2 = true;
+  lockSection("q2", false);
+  enforceScrollLimit();
+  }
+}
+
+function checkQ2(){
+  const slots = [...document.querySelectorAll("#q2Answer .slot")];
+  const success3 = document.getElementById("success3");
+
+  // 没填满：不显示成功，同时允许未来再次触发自动滚动
+  if(slots.some(s => !s.querySelector(".word"))){
+    success3.style.display = "none";
+    didAutoScroll = false;
+    return;
+  }
+
+  const ok = slots.every(s => s.querySelector(".word").innerText.trim() === s.dataset.answer);
+  success3.style.display = ok ? "block" : "none";
+
+  // Q1 + Q2 都完成且正确 → 自动滚动（只做一次）
+  if(ok && isQ1AllDone() && !didAutoScroll){
+    didAutoScroll = true;
+    success3.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  // 若之后变回不正确（例如你允许拖回去）就解除锁
+  if(!ok) didAutoScroll = false;
+}
+
+function resetQ2(){
+  const q2Words = document.getElementById("q2Words");
+  const success3 = document.getElementById("success3");
+
+  document.querySelectorAll("#q2Answer .slot .word").forEach(w=>q2Words.appendChild(w));
+
+  ["真开心","学习","各族同学","一起","我和"].forEach(t=>{
+    const el = [...q2Words.querySelectorAll(".word")].find(x=>x.innerText.trim()===t);
+    if(el) q2Words.appendChild(el);
+  });
+
+  if(success3) success3.style.display = "none";
+  didAutoScroll = false;
+}
+
+/* ===== 底部按钮：重新开始 / 返回 ===== */
+document.getElementById("restartAll").addEventListener("click", ()=>{
+  // ✅ 新增：重新上锁
+  unlockedQ1B = false;
+  unlockedQ2  = false;
+  lockSection("q1b", true);
+  lockSection("q2",  true);
+
+  didScrollToQ1b = false;
+  didScrollToQ2  = false;
+  didAutoScroll  = false;
+
+  resetQ1Section("q1a", ["华族","印度族","马来族","玛美里族"]);
+  resetQ1Section("q1b", ["锡克族","伊班族","卡达山杜顺族","峇峇娘惹"]);
+  resetQ2();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+
+  // ✅ 新增：刷新滚动上限
+  enforceScrollLimit();
+});
+
+document.getElementById("backBtn").addEventListener("click", ()=>{
+  history.back();
+  // 或：location.href = "index.html";
+});
+function resetQ1Section(id, order){
+  const sec = document.getElementById(id);
+  if(!sec) return;
+
+  const optionsBox = sec.querySelector(".options");
+  if(!optionsBox) return;
+
+  // 1) 把放进 drop-box 的 option 全部移回 options 区
+  sec.querySelectorAll(".drop-box .option").forEach(opt=>{
+    optionsBox.appendChild(opt);
+  });
+
+  // 2) 按指定顺序重新排列 options
+  order.forEach(t=>{
+    const el = [...optionsBox.querySelectorAll(".option")]
+      .find(x => x.innerText.trim() === t);
+    if(el) optionsBox.appendChild(el);
+  });
+
+  // 3) 隐藏成功提示
+  const s = sec.querySelector(".success");
+  if(s) s.style.display = "none";
+}
+lockSection("q1b", true);
+lockSection("q2",  true);
+unlockedQ1B = false;
+unlockedQ2  = false;
+enforceScrollLimit();
+
+
+</script>
+
+</body>
+</html>
