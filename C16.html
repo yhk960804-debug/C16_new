@@ -58,7 +58,10 @@ body{
   background: linear-gradient(180deg, var(--c2), #ffffff 55%, var(--c3));
 }
 
-.lead{ margin: -15px 0 14px; }
+.lead{ 
+  margin: -15px 0 14px; 
+  font-size: 25px;
+}
 
 .container{
   max-width:1100px;
@@ -172,14 +175,19 @@ h2{
 /* 允许内容超出虚线框 */
 .drop-box{ overflow: visible; }
 
-/* 只放大“马来族”那张图 20% */
 .drop-box[data-answer="马来族"] img{
-  transform: translateY(-10px) scale(1.2);
-  transform-origin: center;
+  transform: translateY(-10px) scale(1.2);transform-origin: center;
+}
+.drop-box[data-answer="华族"] img{
+  transform: translateY(-10px) scale(1.1);transform-origin: center;
 }
 @media (max-width: 700px){
   .drop-box[data-answer="马来族"] img{
-    transform: translateY(-14px) scale(1.35); /* 手机更明显，可自行调 */
+    transform: translateY(-14px) scale(1.35);
+  }
+@media (max-width: 700px){
+  .drop-box[data-answer="华族"] img{
+    transform: translateY(-14px) scale(1.35);
   }
 }
 
@@ -212,7 +220,7 @@ h2{
 .slot{
   border:2px dashed #aaa;
   border-radius:12px;
-  min-height:clamp(46px, 8vw, 56px);
+  min-height:clamp(46px, 2vw, 56px);
   display:flex;
   align-items:center;
   justify-content:center;
@@ -676,6 +684,28 @@ document.querySelectorAll(".option, .word").forEach(el=>{
 });
 
 /* ================= 检查逻辑 + reset ================= */
+const SCROLL_DELAY = 1000; // ✅ 2秒后才滚动
+
+let tScrollQ1B = null;
+let tScrollQ2  = null;
+let tScrollEnd = null;
+
+function delayedScrollTo(id, timerName){
+  // 清掉旧的，避免重复排队滚动
+  if(timerName === "q1b" && tScrollQ1B) clearTimeout(tScrollQ1B);
+  if(timerName === "q2"  && tScrollQ2)  clearTimeout(tScrollQ2);
+  if(timerName === "end" && tScrollsScrollEnd) clearTimeout(tScrollEnd);
+
+  const fn = () => {
+    const el = document.getElementById(id);
+    if(el) el.scrollIntoView({ behavior:"smooth", block:"start" });
+  };
+
+  if(timerName === "q1b") tScrollQ1B = setTimeout(fn, SCROLL_DELAY);
+  if(timerName === "q2")  tScrollQ2  = setTimeout(fn, SCROLL_DELAY);
+  if(timerName === "end") tScrollEnd = setTimeout(fn, SCROLL_DELAY);
+}
+
 let didAutoScroll = false;
 let didScrollToQ1b = false;
 let didScrollToQ2  = false;
@@ -709,13 +739,13 @@ function checkQ1(){
   // 1) 完成 q1a -> 滚到 q1b（只触发一次）
   if(q1aDone && !didScrollToQ1b){
     didScrollToQ1b = true;
-    document.getElementById("q1b").scrollIntoView({ behavior:"smooth", block:"start" });
+    delayedScrollTo("q1b", "q1b");
   }
 
   // 2) 完成 q1b -> 滚到第二题 q2（只触发一次；并且要求 q1a 也完成）
   if(q1aDone && q1bDone && !didScrollToQ2){
     didScrollToQ2 = true;
-    document.getElementById("q2").scrollIntoView({ behavior:"smooth", block:"start" });
+    delayedScrollTo("q2", "q2");
   }
 
   // 如果之后被你“重置/变回未完成”，允许未来再次触发滚动
@@ -792,6 +822,8 @@ document.getElementById("restartAll").addEventListener("click", ()=>{
   resetQ1Section("q1b", ["锡克族","伊班族","卡达山杜顺族","峇峇娘惹"]);
   resetQ2();
   window.scrollTo({ top: 0, behavior: "smooth" });
+
+
 
   // ✅ 新增：刷新滚动上限
   enforceScrollLimit();
