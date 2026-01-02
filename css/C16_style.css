@@ -56,6 +56,7 @@ body{
   padding:clamp(10px, 3vw, 20px);
   font-family: "MixFont","KaiTi","Kaiti SC","STKaiti","DFKai-SB", serif;
   font-size:var(--fs);
+  font-weight:bold;
   line-height:1.35;
   background: linear-gradient(180deg, var(--c2), #ffffff 55%, var(--c3));
 }
@@ -321,4 +322,5 @@ h2{
 #controls .img-restart{ background-image:url("../images/btn_restart.png"); }
 #controls .img-home{ background-image:url("../images/btn_home.png"); }
 #controls .img-btn:active{ transform:scale(0.98); }
+
 
