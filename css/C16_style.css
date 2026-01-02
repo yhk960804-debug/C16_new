@@ -16,16 +16,18 @@
 
 @font-face{
   font-family: "MixFont";
-  src: url("../fonts/DFKai-SB.ttf") format("opentype");
+  src: url("../fonts/DFKai-SB.ttf") format("truetype");
   font-weight: 400;
   font-style: normal;
+  unicode-range: U+3000-303F,U+3400-4DBF,U+4E00-9FFF,U+FF00-FFEF;;
 }
 
 @font-face{
   font-family: "MixFont";
-  src: url("../fonts/STKaiti.ttf") format("opentype");
+  src: url("../fonts/STKaiti.ttf") format("truetype");
   font-weight: 400;
   font-style: normal;
+  unicode-range: U+3000-303F,U+3400-4DBF,U+4E00-9FFF,U+FF00-FFEF;
 }
 
 :root{
@@ -336,6 +338,7 @@ h2{
 #controls .img-restart{ background-image:url("../images/btn_restart.png"); }
 #controls .img-home{ background-image:url("../images/btn_home.png"); }
 #controls .img-btn:active{ transform:scale(0.98); }
+
 
 
 
