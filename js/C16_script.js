@@ -397,6 +397,77 @@ document.getElementById("backBtn").addEventListener("click", ()=>{
   history.back();
 });
 
+function asset(src) {
+  return src; // 目前你的路径已是 "images/xxx.png"，直接返回即可
+}
+
+/* 你的按钮图片路径（按你的实际文件名改） */
+const BTN_HOME_RED     = "images/BTN_HOME_RED.png";
+const BTN_HOME_YELLOW  = "images/BTN_HOME_YELLOW.png";
+const BTN_RESTART_RED  = "images/BTN_RESTART_RED.png";
+const BTN_RESTART_YELLOW = "images/BTN_RESTART_YELLOW.png";
+
+/** 绑定“按下变黄、放开变红”的效果（支持 pointer + 键盘） */
+function bindPressSwap(buttonEl, redSrc, yellowSrc) {
+  if (!buttonEl) return;
+
+  // 兼容：按钮内部有 img 就换 img.src；没有 img 就换按钮背景图
+  const img = buttonEl.querySelector("img") || null;
+
+  const preload = (src) => {
+    const im = new Image();
+    im.src = asset(src);
+  };
+  preload(redSrc);
+  preload(yellowSrc);
+
+  const applyRed = () => {
+    if (img) img.src = asset(redSrc);
+    else buttonEl.style.backgroundImage = `url("${asset(redSrc)}")`;
+  };
+
+  const applyYellow = (e) => {
+    // 鼠标右键/中键不触发
+    if (e?.pointerType === "mouse" && e.button !== 0) return;
+    if (img) img.src = asset(yellowSrc);
+    else buttonEl.style.backgroundImage = `url("${asset(yellowSrc)}")`;
+  };
+
+  // 初始化为红色
+  applyRed();
+
+  // pointer：按下/抬起/取消/离开
+  buttonEl.addEventListener("pointerdown", applyYellow);
+  buttonEl.addEventListener("pointerup", applyRed);
+  buttonEl.addEventListener("pointercancel", applyRed);
+  buttonEl.addEventListener("pointerleave", applyRed);
+  requestAnimationFrame(applyRed); // 再补一次，确保首帧渲染
+
+
+
+  // 键盘：Enter/Space
+  buttonEl.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      // Space 默认会滚动页面，通常应阻止
+      e.preventDefault();
+      applyYellow(e);
+    }
+  });
+  buttonEl.addEventListener("keyup", (e) => {
+    if (e.key === "Enter" || e.key === " ") applyRed();
+  });
+
+  // 窗口失焦：强制回红色，避免卡在黄色
+  window.addEventListener("blur", applyRed, { passive: true });
+}
+
+/* 绑定你的两个按钮 */
+const btnBack = document.getElementById("backBtn");
+const btnRestart = document.getElementById("restartAll");
+
+bindPressSwap(btnBack, BTN_HOME_RED, BTN_HOME_YELLOW);
+bindPressSwap(btnRestart, BTN_RESTART_RED, BTN_RESTART_YELLOW);
+
 /* 初始上锁 + 立刻执行一次限制 */
 lockSection("q1b", true);
 lockSection("q2",  true);
