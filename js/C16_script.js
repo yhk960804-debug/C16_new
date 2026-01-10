@@ -1,454 +1,595 @@
-@font-face{
-  font-family: "MixFont";
-  src: url("../fonts/Azim-Light.otf") format("opentype");
-  font-weight: 400;
-  font-style: normal;
-  unicode-range: U+0000-024F, U+2000-206F, U+20A0-20CF;
+function flashHint(sectionEl){
+  if(!sectionEl) return;
+  const hint = sectionEl.querySelector(".hint");
+  if(!hint) return;
+
+  hint.style.display = "block";
+
+  // ====== 你可以调的数值 ======
+  const HINT_GAP = 12;  // hint 距离底条上缘留多少像素
+  // ===========================
+
+  requestAnimationFrame(()=>{
+    const rect = hint.getBoundingClientRect();
+    const safeBottom = window.innerHeight - getControlsH();
+
+    if(rect.bottom > safeBottom - HINT_GAP){
+      const delta = rect.bottom - (safeBottom - HINT_GAP);
+      window.scrollBy({ top: delta, behavior: "smooth" });
+    }else if(rect.top < 0 + HINT_GAP){
+      const delta = rect.top - HINT_GAP;
+      window.scrollBy({ top: delta, behavior: "smooth" });
+    }
+  });
+
+  if(hint._t) clearTimeout(hint._t);
+  hint._t = setTimeout(()=>{ hint.style.display = "none"; }, 2000);
 }
 
-@font-face{
-  font-family: "MixFont";
-  src: url("../fonts/HYc1gj.ttf") format("truetype");
-  font-weight: 400;
-  font-style: normal;
-  unicode-range: U+3000-303F, U+3400-4DBF, U+4E00-9FFF, U+FF00-FFEF;
+// ====== 你可以调的数值 ======
+const CONTROLS_H = 120;
+const LOCK_PAD   = 16;
+
+let unlockedQ1B = false;
+let unlockedQ2  = false;
+
+function lockSection(id, locked){
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.classList.toggle("locked", locked);
+  el.setAttribute("aria-disabled", locked ? "true" : "false");
 }
 
-@font-face{
-  font-family: "MixFont";
-  src: url("../fonts/DFKai-SB.ttf") format("truetype");
-  font-weight: 400;
-  font-style: normal;
-  unicode-range: U+3000-303F,U+3400-4DBF,U+4E00-9FFF,U+FF00-FFEF;;
+function scrollToSuccess(sectionId){
+  const sec = document.getElementById(sectionId);
+  if(!sec) return;
+  const success = sec.querySelector(".success");
+  if(!success) return;
+
+  // 先确保它是可见的
+  success.style.display = "block";
+
+  const GAP = 12;
+  requestAnimationFrame(()=>{
+    const rect = success.getBoundingClientRect();
+    const safeBottom = window.innerHeight - CONTROLS_H;
+
+    if(rect.bottom > safeBottom - GAP){
+      const delta = rect.bottom - (safeBottom - GAP);
+      window.scrollBy({ top: delta, behavior: "smooth" });
+    }else if(rect.top < 0 + GAP){
+      const delta = rect.top - GAP;
+      window.scrollBy({ top: delta, behavior: "smooth" });
+    }
+  });
+}
+function ensureVisible(el, gap = 12){
+  if(!el) return;
+
+  requestAnimationFrame(()=>{
+    const rect = el.getBoundingClientRect();
+    const safeBottom = window.innerHeight - CONTROLS_H;
+
+    // 元素底部被底栏挡住 -> 往下滚
+    if(rect.bottom > safeBottom - gap){
+      const delta = rect.bottom - (safeBottom - gap);
+      window.scrollBy({ top: delta, behavior: "smooth" });
+    }
+    // 元素顶部跑到视窗上方 -> 往上滚
+    else if(rect.top < gap){
+      const delta = rect.top - gap;
+      window.scrollBy({ top: delta, behavior: "smooth" });
+    }
+  });
 }
 
-@font-face{
-  font-family: "MixFont";
-  src: url("../fonts/STKaiti.ttf") format("truetype");
-  font-weight: 400;
-  font-style: normal;
-  unicode-range: U+3000-303F,U+3400-4DBF,U+4E00-9FFF,U+FF00-FFEF;
+let didScrollToQ1aSuccess = false;
+
+
+function getScrollLimitY(){
+  const anchorId = !unlockedQ1B ? "q1a" : (!unlockedQ2 ? "q1b" : "q2");
+  const el = document.getElementById(anchorId);
+  if(!el) return Infinity;
+
+  const rect = el.getBoundingClientRect();
+  const bottomDocY = window.scrollY + rect.bottom;
+  const safeBottom = window.innerHeight - CONTROLS_H;
+
+  return Math.max(0, bottomDocY - safeBottom + LOCK_PAD);
 }
 
-:root{
-  --bg:#fafafa;
-  --card:#ffffff;
-  --shadow:0 0 10px rgba(0,0,0,.08);
-  --gap:clamp(10px, 2.4vw, 20px);
-  --radius:16px;
-  --fs:clamp(20px, 3.8vw, 30px);
-  --h2:clamp(50px, 10vw, 60px);
-  --c2:#99DBF5;
-  --c3:#A7ECEE;
+let _locking = false;
+function enforceScrollLimit(){
+  if(_locking) return;
+  const maxY = getScrollLimitY();
+  if(window.scrollY > maxY){
+    _locking = true;
+    window.scrollTo({ top: maxY, behavior: "auto" });
+    _locking = false;
+  }
+}
+window.addEventListener("scroll", enforceScrollLimit, { passive: true });
+window.addEventListener("resize", enforceScrollLimit);
+
+/* ================= 桌面端：HTML5 drag & drop ================= */
+let dragged = null;
+
+document.querySelectorAll(".option, .word").forEach(el=>{
+  el.addEventListener("dragstart", e => dragged = e.target);
+});
+
+document.querySelectorAll(".drop-box").forEach(box=>{
+  box.addEventListener("dragover", e => e.preventDefault());
+  box.addEventListener("drop", e=>{
+    e.preventDefault();
+    if(!dragged) return;
+
+    const text = dragged.innerText.trim();
+    if(!dragged.classList.contains("option")) return;
+
+    if(text !== box.dataset.answer){
+      flashHint(box.closest(".section"));
+      return;
+    }
+
+    const existing = box.querySelector(".option");
+    if(existing){
+      box.closest(".section").querySelector(".options").appendChild(existing);
+    }
+
+box.appendChild(dragged);
+// ✅ 只针对“玛美里族 / 印度族”这两个 drop-box，强制滚到看得见
+if(box.dataset.answer === "玛美里族" || box.dataset.answer === "印度族"){
+  ensureVisible(box);
+}
+dragged = null;
+checkQ1();
+  });
+});
+
+// 第二题：slot drop
+document.querySelectorAll("#q2Answer .slot").forEach(slot=>{
+  slot.addEventListener("dragover", e => e.preventDefault());
+  slot.addEventListener("drop", e=>{
+    e.preventDefault();
+    if(!dragged) return;
+    if(!dragged.classList.contains("word")) return;
+
+    const existing = slot.querySelector(".word");
+    if(existing) document.getElementById("q2Words").appendChild(existing);
+
+    slot.appendChild(dragged);
+
+    if(dragged.innerText.trim() !== slot.dataset.answer){
+      flashHint(document.getElementById("q2"));
+    }
+
+    dragged = null;
+    checkQ2();
+  });
+});
+
+// 第二题：拖回选项区
+const q2Words = document.getElementById("q2Words");
+q2Words.addEventListener("dragover", e => e.preventDefault());
+q2Words.addEventListener("drop", e=>{
+  e.preventDefault();
+  if(!dragged) return;
+  if(!dragged.classList.contains("word")) return;
+  q2Words.appendChild(dragged);
+  dragged = null;
+  checkQ2();
+});
+
+/* ================= 手机端：Pointer 触控拖放 ================= */
+let pointerDrag = { el:null, ghost:null, offsetX:0, offsetY:0, active:false };
+
+function isTouchPointer(e){
+  return e.pointerType === "touch" || e.pointerType === "pen";
 }
 
-*{ box-sizing:border-box; }
+function startPointerDrag(e, el){
+  pointerDrag.el = el;
+  pointerDrag.active = true;
 
-.cornerTag{
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  z-index: 10001;
-  pointer-events: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-.cornerTag img{ height: 18px; width:auto; display:block; flex:0 0 auto; }
-.cornerTag > span{
-  font-size: 14px;
-  line-height: 1;
-  color: rgba(0,0,0,.75);
-  white-space: nowrap;
-}
-.cornerTag .en{
-  font-size: 12px;
-  display: inline-block;
-  transform: translateY(-0.03em);
+  const r = el.getBoundingClientRect();
+  pointerDrag.offsetX = e.clientX - r.left;
+  pointerDrag.offsetY = e.clientY - r.top;
+
+  const ghost = el.cloneNode(true);
+  ghost.style.position = "fixed";
+  ghost.style.left = (e.clientX - pointerDrag.offsetX) + "px";
+  ghost.style.top  = (e.clientY - pointerDrag.offsetY) + "px";
+  ghost.style.zIndex = 9999;
+  ghost.style.opacity = "0.9";
+  ghost.style.pointerEvents = "none";
+  ghost.style.transform = "scale(1.02)";
+  document.body.appendChild(ghost);
+  pointerDrag.ghost = ghost;
 }
 
-body{
-  margin:0;
-  padding:clamp(10px, 3vw, 20px);
-  font-family: "MixFont","KaiTi","Kaiti SC","STKaiti","DFKai-SB", serif;
-  font-size:var(--fs);
-  font-weight:bold;
-  line-height:1.35;
-  background: linear-gradient(180deg, var(--c2), #ffffff 55%, var(--c3));
+function movePointerDrag(e){
+  if(!pointerDrag.active || !pointerDrag.ghost) return;
+  pointerDrag.ghost.style.left = (e.clientX - pointerDrag.offsetX) + "px";
+  pointerDrag.ghost.style.top  = (e.clientY - pointerDrag.offsetY) + "px";
 }
 
-.lead{ margin:2px 0 5px; font-size:clamp(20px, 3.8vw, 30px); }
+function endPointerDrag(e){
+  if(!pointerDrag.active) return;
 
-.container{ max-width:1100px; margin:0 auto; }
+  const el = pointerDrag.el;
+  const ghost = pointerDrag.ghost;
+  const target = document.elementFromPoint(e.clientX, e.clientY);
 
-.section{
-  background:var(--card);
-  border-radius:var(--radius);
-  padding:clamp(14px, 3vw, 24px);
-  margin:0 0 var(--gap);
-  box-shadow:var(--shadow);
-}
+ const dropBox = target && target.closest && target.closest(".drop-box");
+if(dropBox && el.classList.contains("option")){
+  const text = el.innerText.trim();
 
-h2{ 
-  font-family: "MixFont","KaiTi","Kaiti SC","STKaiti","DFKai-SB", serif;
-  font-size:var(--h2); 
-  text-align:center; 
-}
+  if(text === dropBox.dataset.answer){
+    const existing = dropBox.querySelector(".option");
+    if(existing){
+      dropBox.closest(".section").querySelector(".options").appendChild(existing);
+    }
+    dropBox.appendChild(el);
 
-#pageTitle{
-  width: min(1200px, 100%);
-  margin: 10px auto 0px;
-  text-align:center;
-  font-size: var(--h2);
-  font-weight: 800;
-  line-height: 2;
-  text-shadow:
-    -2px -2px 0 #fff,  2px -2px 0 #fff,
-    -2px  2px 0 #fff,  2px  2px 0 #fff,
-     0   -2px 0 #fff,  0    2px 0 #fff,
-    -2px  0   0 #fff,  2px  0   0 #fff,
-     0    4px 10px rgba(0,0,0,.18);
-}
-
-/* 通用提示 */
-.success{
-  text-align:center;
-  font-size:clamp(26px, 4.6vw, 40px);
-  margin-top:clamp(10px, 2.2vw, 18px);
-  display:none;
-  color:#1aa260;
-}
-
-#success3 b{
-  display: block;
-  width: fit-content;
-  max-width: calc(100% - 24px);
-  margin: 10px auto 0;
-  padding: 10px clamp(16px, 8vw, 90px);
-  font-size: clamp(24px, 6vw, 37px);
-  white-space: nowrap;
-  word-break: keep-all;
-  overflow-wrap: normal;
-  text-align: center;
-  box-sizing: border-box;
-}
-
-.hint{
-  text-align:center;
-  font-size:clamp(22px, 4vw, 34px);
-  margin-top:clamp(10px, 2vw, 16px);
-  display:none;
-  color:#323232;
-}
-
-/* ========= 第一题 ========= */
-.qblock{ display:grid; gap:var(--gap); grid-template-columns:1fr; }
-
-.options, .answers{
-  display:flex;
-  flex-wrap:wrap;
-  justify-content:center;
-  gap:var(--gap);
-}
-
-.option, .word{ touch-action:none; user-select:none; }
-
-.option{
-  background: linear-gradient(180deg, #D4F6FF, #C6E7FF);
-  padding:clamp(10px, 1.3vw, 10px) clamp(10px, 1.3vw, 10px);
-  border-radius:14px;
-  cursor:grab;
-  box-shadow:var(--shadow);
-  margin-top:0px;
-}
-
-.options .option{
-  text-align:center;
-  white-space:nowrap;
-  overflow-wrap:normal;
-  word-break:keep-all;
-  flex: 0 0 calc(20% - (var(--gap) / 2));
-}
-
-.drop-box{
-  flex: 0 0 calc(50% - (var(--gap) / 2));
-  width:clamp(140px, 24vw, 200px);
-  height:clamp(170px, 26vw, 240px);
-  border:2px dashed #aaa;
-  border-radius:18px;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:flex-start;
-  padding-top:8px;
-  background:#fff;
-  text-align:center;
-  overflow: visible;
-}
-
-.drop-box img{
-  width:100%;
-  height:clamp(95px, 16vw, 150px);
-  object-fit:contain;
-  pointer-events:none;
-}
-
-.drop-box[data-answer="马来族"] img{
-  transform: translateY(-10px) scale(1.2);
-  transform-origin: center;
-}
-.drop-box[data-answer="华族"] img{
-  transform: translateY(-10px) scale(1.1);
-  transform-origin: center;
-}
-@media (max-width: 700px){
-  .drop-box[data-answer="马来族"] img{
-    transform: translateY(-14px) scale(1.35);
+    if(isMobileLandscape()) ensureVisible(dropBox);
+    checkQ1();
+  }else{
+    // ✅ 手机端答错：显示 “想一想，再回答”
+    flashHint(dropBox.closest(".section"));
   }
 }
 
-/* ========= 第二题 ========= */
-.words{
-  display:flex;
-  flex-wrap:wrap;
-  gap:var(--gap);
-  justify-content:center;
-  margin-top:clamp(8px, 2vw, 14px);
-}
-.word{
-  background:#fff3e0;
-  padding:clamp(10px, 5vw, 10px) clamp(10px, 5vw, 10px);
-  border-radius:12px;
-  cursor:grab;
-  box-shadow:var(--shadow);
-}
-.answer-line{
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  gap:clamp(6px, 1.5vw, 10px);
-  margin-top:clamp(10px, 2.2vw, 18px);
-  flex-wrap:wrap;
-}
-.slot{
-  border:2px dashed #aaa;
-  border-radius:12px;
-  min-height:clamp(46px, 8vw, 56px);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  background:#fff;
-  padding:4px 4px;
-}
-.slot.len2{ width: 4em; }
-.slot.len3{ width: 5em; }
-.slot.len4{ width: 6em; }
-.punct{ font-size:var(--fs); line-height:1; }
-.slot .word{ margin:0; box-shadow:none; }
+  
 
-.locked{
-  opacity:.45;
-  filter: grayscale(.15);
-}
-.locked, .locked *{ pointer-events:none; }
+  // 2) 第二题：slot
+  const slot = target && target.closest && target.closest("#q2Answer .slot");
+  if(slot && el.classList.contains("word")){
+    const existing = slot.querySelector(".word");
+    if(existing) document.getElementById("q2Words").appendChild(existing);
 
-#success3 b{
-  color:#00712D;
-  font-family: "MixFont","KaiTi","Kaiti SC","STKaiti","DFKai-SB", serif;
-  display:inline-block;
-  text-align:center;
-  margin:5px 0 0px;
-  font-size:37px;
-  background:#F8FDCF;
-  padding:10px 90px;
-  border-radius:20px;
-  text-shadow:
-    -2px -2px 0 #D5ED9F,  2px -2px 0 #D5ED9F,
-    -2px  2px 0 #D5ED9F,  2px  2px 0 #D5ED9F,
-     0   -2px 0 #D5ED9F,  0    2px 0 #D5ED9F,
-    -2px  0   0 #D5ED9F,  2px  0   0 #D5ED9F,
-     0    4px 10px rgba(0,0,0,.18);
+    slot.appendChild(el);
+
+    if(el.innerText.trim() !== slot.dataset.answer){
+      flashHint(document.getElementById("q2"));
+    }
+
+    checkQ2();
+  }
+
+  // 3) 第二题：拖回选项区
+  const wordsArea = target && target.closest && target.closest("#q2Words");
+  if(wordsArea && el.classList.contains("word")){
+    wordsArea.appendChild(el);
+    checkQ2();
+  }
+
+  if(ghost) ghost.remove();
+  pointerDrag = { el:null, ghost:null, offsetX:0, offsetY:0, active:false };
 }
 
-/* ===== 响应式 ===== */
-@media (min-width: 900px){
-  :root{ --fs:22px; --h2:40px; }
-}
-@media (max-width: 700px){
-  #q1a .options, #q1b .options{
-    flex-wrap:wrap;
-    overflow-x:visible;
-    -webkit-overflow-scrolling:touch;
-    justify-content:center;
-    gap:14px;
-    padding:6px 4px 10px;
-  }
-  #q1a .answers, #q1b .answers{
-    display:grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    justify-items:center;
-    gap:14px;
-  }
-  #q1a .drop-box, #q1b .drop-box{
-    width:100%;
-    max-width:230px;
-  }
-}
-  #success3 b{
-    font-size: clamp(32px, 8vw, 40px);          /* 手机字更小一点 */
-    padding: 10px clamp(28px, 8vw, 50px);       /* 左右 padding 变小 */
-    max-width: calc(100% - 24px);               /* 防止超出卡片 */
-    box-sizing: border-box;
-  }
+document.querySelectorAll(".option, .word").forEach(el=>{
+  el.addEventListener("pointerdown", (e)=>{
+    if(!isTouchPointer(e)) return;
+    e.preventDefault();
+    el.setPointerCapture(e.pointerId);
+    startPointerDrag(e, el);
+  });
 
-/* ===== 底部按钮（PNG） ===== */
-#controls{
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  gap:100px;
-  margin:24px 0 10px;
-  padding-bottom:calc(10px + env(safe-area-inset-bottom));
-  background:transparent;
-  position:sticky;
-  bottom:0;
-  z-index:50;
-}
-#controls::before{
-  content:none;
-  display:none;
-  position:absolute;
-  inset:0;
-  background: linear-gradient(180deg, rgba(255,255,255,.0), rgba(255,255,255,.85));
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  z-index:0;
-  pointer-events:none;
-}
-#controls button{ position:relative; z-index:1; }
+  el.addEventListener("pointermove", (e)=>{
+    if(!isTouchPointer(e)) return;
+    if(!pointerDrag.active) return;
+    e.preventDefault();
+    movePointerDrag(e);
+  });
 
-#controls .img-btn{
-  width: clamp(40px, 12vw, 60px);
-  height: clamp(60px, 40vw, 80px);
-  border:none;
-  padding:0;
-  cursor:pointer;
-  background: transparent no-repeat center / contain;
-  -webkit-tap-highlight-color: transparent;
-}
-#controls .img-restart{ background-image:url("../images/BTN_RESTART_RED.png"); }
-#controls .img-home{ background-image:url("../images/BTN_HOME_RED.png"); }
-#controls .img-btn:active{ transform:scale(0.98); }
+  el.addEventListener("pointerup", (e)=>{
+    if(!isTouchPointer(e)) return;
+    e.preventDefault();
+    endPointerDrag(e);
+  });
 
-#controls{ display:flex; } 
-#btnBack{ order: 1; } 
-#btnRestart{ order: 2; } 
+  el.addEventListener("pointercancel", (e)=>{
+    if(!isTouchPointer(e)) return;
+    endPointerDrag(e);
+  });
+});
 
-/* ===== 只改电脑端（>=900px） ===== */
-@media (min-width: 900px){
-  h2,
-  #pageTitle{
-    font-size: 55px !important;
-  }
+/* ================= 检查逻辑 + reset ================= */
+const SCROLL_DELAY = 1500; // 你要几秒：2000=2秒
 
-  .words .word,
-  .answer-line .slot,
-  .answer-line .slot .word{
-    font-size: clamp(20px, 3.8vw, 30px) !important; /* 与 .lead 完全一致 */
-  }
-.option{ font-size: clamp(20px, 3.8vw, 30px) !important; }
+let tScrollQ1B = null;
+let tScrollQ2  = null;
+let tScrollEnd = null;
+
+function delayedScrollTo(id, timerName){
+  if(timerName === "q1b" && tScrollQ1B) clearTimeout(tScrollQ1B);
+  if(timerName === "q2"  && tScrollQ2)  clearTimeout(tScrollQ2);
+  if(timerName === "end" && tScrollEnd) clearTimeout(tScrollEnd); // ✅ 修正拼字
+
+  const fn = () => {
+    const el = document.getElementById(id);
+    if(el) el.scrollIntoView({ behavior:"smooth", block:"start" });
+  };
+
+  if(timerName === "q1b") tScrollQ1B = setTimeout(fn, SCROLL_DELAY);
+  if(timerName === "q2")  tScrollQ2  = setTimeout(fn, SCROLL_DELAY);
+  if(timerName === "end") tScrollEnd = setTimeout(fn, SCROLL_DELAY);
 }
 
-/* ===== 只改手机竖屏：不影响电脑端 / 不影响手机横屏 ===== */
-@media (max-width: 700px) and (orientation: portrait){
+let didAutoScroll = false;
+let didScrollToQ1b = false;
+let didScrollToQ2  = false;
 
-  h2,
-  #pageTitle{
-    font-size: 35px !important;
+function isSectionDone(id){
+  const sec = document.getElementById(id);
+  if(!sec) return false;
+  return [...sec.querySelectorAll(".drop-box")].every(b => b.querySelector(".option"));
+}
+
+function isQ1AllDone(){
+  return ["q1a","q1b"].every(id=>{
+    const sec = document.getElementById(id);
+    if(!sec) return false;
+    return [...sec.querySelectorAll(".drop-box")].every(b => b.querySelector(".option"));
+  });
+}
+
+function checkQ1(){
+  const q1a = document.getElementById("q1a");
+  const q1b = document.getElementById("q1b");
+
+  const q1aDone = isSectionDone("q1a");
+  const q1bDone = isSectionDone("q1b");
+
+  if(q1a && q1aDone) q1a.querySelector(".success").style.display = "block";
+  if(q1b && q1bDone) q1b.querySelector(".success").style.display = "block";
+
+  // ✅ 新增：Q1A 第一次完成时，先滚到 Q1A 的 success
+  if(q1aDone && !didScrollToQ1aSuccess){
+    didScrollToQ1aSuccess = true;
+    scrollToSuccess("q1a");
   }
 
-  :root{
-    --leadSizeP: clamp(20px, 3.8vw, 30px);
+  if(q1aDone && !didScrollToQ1b){
+    didScrollToQ1b = true;
+    delayedScrollTo("q1b", "q1b");
   }
-  .lead{ font-size: var(--leadSizeP) !important; }
+  if(q1bDone && !didScrollToQ1bSuccess){
+    didScrollToQ1bSuccess = true;
+   scrollToSuccess("q1b");
+  }
+  if(q1aDone && q1bDone && !didScrollToQ2){
+    didScrollToQ2 = true;
+    delayedScrollTo("q2", "q2");
+  }
 
-  .options .option,
-  .drop-box .option,
-  .words .word,
-  .answer-line .slot,
-  .answer-line .slot .word{
-    font-size: var(--leadSizeP) !important;
+  if(!q1aDone){
+    didScrollToQ1aSuccess = false;
+   didScrollToQ1b = false;
+  }
+  if(!q1bDone){
+   didScrollToQ1bSuccess = false;
+  }
+
+  if(!(q1aDone && q1bDone)) didScrollToQ2 = false;
+
+  if(q1aDone && !unlockedQ1B){
+    unlockedQ1B = true;
+    lockSection("q1b", false);
+    enforceScrollLimit();
+  }
+
+  if(q1aDone && q1bDone && !unlockedQ2){
+    unlockedQ2 = true;
+    lockSection("q2", false);
+    enforceScrollLimit();
   }
 }
-/* ===== 只改手机横屏 ===== */
-@media (max-width: 900px) and (orientation: landscape){
+let didScrollToQ1bSuccess = false;
 
-  /* 1) 标题 h2 固定 35px（含 #pageTitle） */
-  h2, #pageTitle{
-    font-size: 35px !important;
-  }
 
-  /* 2) 字号：option / dropbox内的option / words / slot 都 =「手机竖屏 .lead」的字号
-        你竖屏 .lead 用的是 clamp(20px, 3.8vw, 30px)，在手机竖屏通常会落在 20px。
-        为了让横屏“跟竖屏一样”，这里直接固定为 20px（最稳定）。 */
-  .lead,
-  .options .option,
-  .drop-box .option,
-  .words .word,
-  .answer-line .slot,
-  .answer-line .slot .word{
-    font-size: 20px !important;
+function checkQ2(){
+  const slots = [...document.querySelectorAll("#q2Answer .slot")];
+  const success3 = document.getElementById("success3");
+
+  if(slots.some(s => !s.querySelector(".word"))){
+    success3.style.display = "none";
+    document.body.classList.remove("show-success3"); // ✅ 加这里
+    didAutoScroll = false;
+    return;
   }
 
-  /* 3) 横屏整体缩小 50%（推荐：缩小间距/盒子尺寸，而不是 transform 缩放） */
-  :root{
-    --gap: clamp(5px, 1.2vw, 10px);   /* 原本大约的一半 */
-    --radius: 8px;                    /* 原本 16px 的一半 */
-  }
-  body{ padding: clamp(5px, 1.5vw, 10px); }       /* 原本的一半左右 */
-  .section{ padding: clamp(7px, 1.5vw, 12px); }
-  .option{ padding: 6px 8px; border-radius: 10px; }
-  .word{ padding: 6px 8px; border-radius: 10px; }
-  .slot{ min-height: 38px; }
-  .drop-box{
-    width: 100%;
-    flex: none;
-    height: clamp(120px, 38vh, 170px);
-    border-radius: 12px;
-  }
-  .drop-box img{
-    height: clamp(70px, 22vh, 110px);
+
+  const ok = slots.every(s => s.querySelector(".word").innerText.trim() === s.dataset.answer);
+  success3.style.display = ok ? "block" : "none";
+  document.body.classList.toggle("show-success3", ok); // ✅ 只在出现时加底部空间
+
+  if(ok && isQ1AllDone() && !didAutoScroll){
+    didAutoScroll = true;
+
+    const sticker = success3.querySelector("b") || success3; // ✅ 锁定「你真棒！」
+
+  // 先滚到靠下位置
+    sticker.scrollIntoView({ behavior:"smooth", block:"end" });
+
+  // 再用你现成的 ensureVisible，确保不会被 #controls 挡住
+    setTimeout(()=>ensureVisible(sticker, 12), 250);
   }
 
-  /* 4) 横屏排版：Q1A / Q1B 统一为
-        4 个 option 一排（在 lead 下），4 个 drop-box 一排（在 option 下） */
-  #q1a .options, #q1b .options{
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: var(--gap);
-    justify-items: stretch;
-  }
-  #q1a .answers, #q1b .answers{
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: var(--gap);
-    justify-items: stretch;
-  }
+if(!ok) didAutoScroll = false;
 
-  /* 取消你原本 .options .option 的 flex 规则（否则会和 grid 冲突） */
-  #q1a .options .option, #q1b .options .option{
-    flex: none !important;
-    width: 100%;
-    white-space: nowrap;
-  }
-    #controls{
-    gap: 40px;                  /* 原本 100px 太大 */
-    margin: 10px 0 6px;
-  }
+}
 
-  #controls .img-btn{
-    width:  clamp(32px, 7vw, 44px);
-    height: clamp(40px, 9vw, 56px);
-  }
+function resetQ2(){
+  const q2Words = document.getElementById("q2Words");
+  const success3 = document.getElementById("success3");
+
+  document.querySelectorAll("#q2Answer .slot .word").forEach(w=>q2Words.appendChild(w));
+
+  ["真开心","学习","各族同学","一起","我和"].forEach(t=>{
+    const el = [...q2Words.querySelectorAll(".word")].find(x=>x.innerText.trim()===t);
+    if(el) q2Words.appendChild(el);
+  });
+
+  if(success3) success3.style.display = "none";
+  document.body.classList.remove("show-success3"); 
+  didAutoScroll = false;
+
+}
+
+function resetQ1Section(id, order){
+  const sec = document.getElementById(id);
+  if(!sec) return;
+
+  const optionsBox = sec.querySelector(".options");
+  if(!optionsBox) return;
+
+  sec.querySelectorAll(".drop-box .option").forEach(opt=>{
+    optionsBox.appendChild(opt);
+  });
+
+  order.forEach(t=>{
+    const el = [...optionsBox.querySelectorAll(".option")]
+      .find(x => x.innerText.trim() === t);
+    if(el) optionsBox.appendChild(el);
+  });
+
+  const s = sec.querySelector(".success");
+  if(s) s.style.display = "none";
+}
+
+/* ===== 底部按钮：重新开始 / 返回 ===== */
+document.getElementById("btnRestart").addEventListener("click", ()=>{
+  unlockedQ1B = false;
+  unlockedQ2  = false;
+  lockSection("q1b", true);
+  lockSection("q2",  true);
+
+  didScrollToQ1b = false;
+  didScrollToQ2  = false;
+  didAutoScroll  = false;
+
+  resetQ1Section("q1a", ["华族","印度族","马来族","玛美里族"]);
+  resetQ1Section("q1b", ["锡克族","伊班族","卡达山杜顺族","峇峇娘惹"]);
+  resetQ2();
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  enforceScrollLimit();
+});
+
+document.getElementById("btnBack").addEventListener("click", ()=>{
+  history.back();
+});
+
+function asset(src) {
+  return src; // 目前你的路径已是 "images/xxx.png"，直接返回即可
+}
+
+/* 你的按钮图片路径（按你的实际文件名改） */
+const BTN_HOME_RED     = "images/BTN_HOME_RED.png";
+const BTN_HOME_YELLOW  = "images/BTN_HOME_YELLOW.png";
+const BTN_RESTART_RED  = "images/BTN_RESTART_RED.png";
+const BTN_RESTART_YELLOW = "images/BTN_RESTART_YELLOW.png";
+
+/** 绑定“按下变黄、放开变红”的效果（支持 pointer + 键盘） */
+function bindPressSwap(buttonEl, redSrc, yellowSrc) {
+  if (!buttonEl) return;
+
+  // 兼容：按钮内部有 img 就换 img.src；没有 img 就换按钮背景图
+  const img = buttonEl.querySelector("img") || null;
+
+  const preload = (src) => {
+    const im = new Image();
+    im.src = asset(src);
+  };
+  preload(redSrc);
+  preload(yellowSrc);
+
+  const applyRed = () => {
+    if (img) img.src = asset(redSrc);
+    else buttonEl.style.backgroundImage = `url("${asset(redSrc)}")`;
+  };
+
+  const applyYellow = (e) => {
+    // 鼠标右键/中键不触发
+    if (e?.pointerType === "mouse" && e.button !== 0) return;
+    if (img) img.src = asset(yellowSrc);
+    else buttonEl.style.backgroundImage = `url("${asset(yellowSrc)}")`;
+  };
+
+  // 初始化为红色
+  applyRed();
+
+  // pointer：按下/抬起/取消/离开
+  buttonEl.addEventListener("pointerdown", applyYellow);
+  buttonEl.addEventListener("pointerup", applyRed);
+  buttonEl.addEventListener("pointercancel", applyRed);
+  buttonEl.addEventListener("pointerleave", applyRed);
+  requestAnimationFrame(applyRed); // 再补一次，确保首帧渲染
+
+
+
+  // 键盘：Enter/Space
+  buttonEl.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      // Space 默认会滚动页面，通常应阻止
+      e.preventDefault();
+      applyYellow(e);
+    }
+  });
+  buttonEl.addEventListener("keyup", (e) => {
+    if (e.key === "Enter" || e.key === " ") applyRed();
+  });
+
+  // 窗口失焦：强制回红色，避免卡在黄色
+  window.addEventListener("blur", applyRed, { passive: true });
+}
+
+/* 绑定你的两个按钮 */
+const btnBack = document.getElementById("btnBack");
+const btnRestart = document.getElementById("btnRestart");
+
+bindPressSwap(btnBack, BTN_HOME_RED, BTN_HOME_YELLOW);
+bindPressSwap(btnRestart, BTN_RESTART_RED, BTN_RESTART_YELLOW);
+
+/* 初始上锁 + 立刻执行一次限制 */
+lockSection("q1b", true);
+lockSection("q2",  true);
+unlockedQ1B = false;
+unlockedQ2  = false;
+enforceScrollLimit();
+
+
+function isMobileLandscape(){
+  return window.matchMedia("(max-width: 900px) and (orientation: landscape)").matches;
+}
+
+function getControlsH(){
+  const c = document.getElementById("controls");
+  return c ? Math.ceil(c.getBoundingClientRect().height) : CONTROLS_H; // 用你原本常数兜底
+}
+
+function ensureVisible(el, gap = 12){
+  if(!el) return;
+
+  requestAnimationFrame(()=>{
+    const rect = el.getBoundingClientRect();
+    const safeBottom = window.innerHeight - getControlsH();
+
+    if(rect.bottom > safeBottom - gap){
+      window.scrollBy({ top: rect.bottom - (safeBottom - gap), behavior:"smooth" });
+    }else if(rect.top < gap){
+      window.scrollBy({ top: rect.top - gap, behavior:"smooth" });
+    }
+  });
+}
+
+function hitTest(selector, x, y){
+  const list = Array.from(document.querySelectorAll(selector));
+  return list.find(el=>{
+    const r = el.getBoundingClientRect();
+    return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+  }) || null;
 }
 
