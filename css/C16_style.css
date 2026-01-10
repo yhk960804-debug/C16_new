@@ -32,15 +32,16 @@
 
 :root{
   --bg:#fafafa;
-  --card:#ffffff;
+  --card: linear-gradient(180deg, rgba(255,220,230,.70), rgba(255,255,255,.92));
   --shadow:0 0 10px rgba(0,0,0,.08);
   --gap:clamp(10px, 2.4vw, 20px);
-  --radius:16px;
+  --radius:20px;
   --fs:clamp(20px, 3.8vw, 30px);
   --h2:clamp(50px, 10vw, 60px);
   --c2:#99DBF5;
   --c3:#A7ECEE;
 }
+#pageTitle{ color:#003285 !important; }
 
 *{ box-sizing:border-box; }
 
@@ -74,7 +75,13 @@ body{
   font-size:var(--fs);
   font-weight:bold;
   line-height:1.35;
-  background: linear-gradient(180deg, var(--c2), #ffffff 55%, var(--c3));
+  background-image:
+    radial-gradient(circle at 50% 35%, rgba(255,255,255,.65) 0%, rgba(255,255,255,.0) 45%),
+    radial-gradient(ellipse at center, rgba(0,0,0,.10) 0%, rgba(0,0,0,.0) 55%),
+    url("../images/C16_BG_Phone.png");
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
 }
 
 .lead{ margin:2px 0 5px; font-size:clamp(20px, 3.8vw, 30px); }
@@ -120,18 +127,17 @@ h2{
 }
 
 #success3 b{
-  display: block;
-  width: fit-content;
-  max-width: calc(100% - 24px);
-  margin: 10px auto 0;
-  padding: 10px clamp(16px, 8vw, 90px);
-  font-size: clamp(24px, 6vw, 37px);
-  white-space: nowrap;
-  word-break: keep-all;
-  overflow-wrap: normal;
-  text-align: center;
-  box-sizing: border-box;
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  transform: translate(-50%, 24px); /* 这里控制“离开白框”往下的距离 */
+  margin: 0 !important;
+
+  padding-top: 18px;
+  padding-bottom: 18px;
+  line-height: 1.15;
 }
+
 
 .hint{
   text-align:center;
@@ -154,9 +160,9 @@ h2{
 .option, .word{ touch-action:none; user-select:none; }
 
 .option{
-  background: linear-gradient(180deg, #D4F6FF, #C6E7FF);
+  background: linear-gradient(180deg,#F8F7BA,#FFF2EB,#FFF2EB,#F5D2D2);
   padding:clamp(10px, 1.3vw, 10px) clamp(10px, 1.3vw, 10px);
-  border-radius:14px;
+  border-radius:20px;
   cursor:grab;
   box-shadow:var(--shadow);
   margin-top:0px;
@@ -175,7 +181,7 @@ h2{
   width:clamp(140px, 24vw, 200px);
   height:clamp(170px, 26vw, 240px);
   border:2px dashed #aaa;
-  border-radius:18px;
+  border-radius:20px;
   display:flex;
   flex-direction:column;
   align-items:center;
@@ -197,10 +203,7 @@ h2{
   transform: translateY(-10px) scale(1.2);
   transform-origin: center;
 }
-.drop-box[data-answer="华族"] img{
-  transform: translateY(-10px) scale(1.1);
-  transform-origin: center;
-}
+
 @media (max-width: 700px){
   .drop-box[data-answer="马来族"] img{
     transform: translateY(-14px) scale(1.35);
@@ -218,7 +221,7 @@ h2{
 .word{
   background:#fff3e0;
   padding:clamp(10px, 5vw, 10px) clamp(10px, 5vw, 10px);
-  border-radius:12px;
+  border-radius:20px;
   cursor:grab;
   box-shadow:var(--shadow);
 }
@@ -232,7 +235,7 @@ h2{
 }
 .slot{
   border:2px dashed #aaa;
-  border-radius:12px;
+  border-radius:20px;
   min-height:clamp(46px, 8vw, 56px);
   display:flex;
   align-items:center;
@@ -240,6 +243,12 @@ h2{
   background:#fff;
   padding:4px 4px;
 }
+#q2.section, #q2{
+  padding-top: 10px;
+  padding-bottom: 10px;  /* 想更矮就继续减 */
+}
+#q2{ padding-bottom: 8px; }  /* 想更矮就继续减 */
+
 .slot.len2{ width: 4em; }
 .slot.len3{ width: 5em; }
 .slot.len4{ width: 6em; }
@@ -270,9 +279,24 @@ h2{
      0    4px 10px rgba(0,0,0,.18);
 }
 
+#success3 br{ display: none;}
+
+/* 重新用 margin 控制“恭喜”与「你真棒」之间的距离 */
+#success3{ margin-top: 8px;}         /* 需要更紧就改小，例如 4px */
+
+#success3 b{
+  margin-top: 20px !important;  /* 需要更紧就改小，例如 6px */
+  display: inline-block;
+}
+
 /* ===== 响应式 ===== */
 @media (min-width: 900px){
   :root{ --fs:22px; --h2:40px; }
+
+  #q1a .drop-box, #q1b .drop-box{
+    flex: 0 0 210px;   /* ✅ 真正控制宽度的关键 */
+    width: 210px;      /* 保险写法 */
+  }
 }
 @media (max-width: 700px){
   #q1a .options, #q1b .options{
@@ -387,10 +411,6 @@ h2{
   h2, #pageTitle{
     font-size: 35px !important;
   }
-
-  /* 2) 字号：option / dropbox内的option / words / slot 都 =「手机竖屏 .lead」的字号
-        你竖屏 .lead 用的是 clamp(20px, 3.8vw, 30px)，在手机竖屏通常会落在 20px。
-        为了让横屏“跟竖屏一样”，这里直接固定为 20px（最稳定）。 */
   .lead,
   .options .option,
   .drop-box .option,
@@ -403,18 +423,18 @@ h2{
   /* 3) 横屏整体缩小 50%（推荐：缩小间距/盒子尺寸，而不是 transform 缩放） */
   :root{
     --gap: clamp(5px, 1.2vw, 10px);   /* 原本大约的一半 */
-    --radius: 8px;                    /* 原本 16px 的一半 */
+    --radius: 20px;                    /* 原本 16px 的一半 */
   }
   body{ padding: clamp(5px, 1.5vw, 10px); }       /* 原本的一半左右 */
   .section{ padding: clamp(7px, 1.5vw, 12px); }
-  .option{ padding: 6px 8px; border-radius: 10px; }
-  .word{ padding: 6px 8px; border-radius: 10px; }
+  .option{ padding: 6px 8px; border-radius: 20px; }
+  .word{ padding: 6px 8px; border-radius: 20px; }
   .slot{ min-height: 38px; }
   .drop-box{
     width: 100%;
     flex: none;
     height: clamp(120px, 38vh, 170px);
-    border-radius: 12px;
+    border-radius: 20px;
   }
   .drop-box img{
     height: clamp(70px, 22vh, 110px);
@@ -451,4 +471,115 @@ h2{
     height: clamp(40px, 9vw, 56px);
   }
 }
+
+
+
+/* ✅ 让「你真棒！」整块脱离 Q2 白框 */
+#q2{
+  position: relative;
+  overflow: visible;
+  margin-bottom: 140px; /* 预留空间避免被底部按钮盖住，可微调 120~180 */
+}
+
+#success3{
+  position: relative;
+}
+
+#success3 b{
+  position: absolute;
+  left: 50%;
+  top: 100%;                         /* 关键：放到 Q2 的下边界外 */
+  transform: translate(-50%, 14px);  /* 往下推一点，完全离开白框 */
+  margin: 0 !important;              /* 盖掉你前面多处 margin */
+  padding-top: 18px;     /* 原本 10px → 增加上方留白 */
+  padding-bottom: 18px;  /* 原本 10px → 增加下方留白 */
+  line-height: 1.15;     /* 文字垂直更舒服，可微调 1.1~1.3 */
+  transform: translate(-50%, 24px); 
+  margin-bottom: 170px;
+}
+
+body.show-success3{
+  padding-bottom: calc(170px + env(safe-area-inset-bottom));
+}
+body.show-success3 #q2::after{
+  content:"";
+  display:block;
+  height: calc(170px + env(safe-area-inset-bottom)); /* 170 可改 140~220 */
+}
+/* ✅ 只改手机端：强制「🎉你真棒！👍🏻」永远同一行（不影响电脑端） */
+@media (max-width: 900px){
+
+  #success3 b{
+    white-space: nowrap !important;
+    word-break: keep-all !important;
+    overflow-wrap: normal !important;
+
+    /* 手机端最常见导致换行的是左右 padding 太大 → 这里缩小 */
+    padding-left: clamp(18px, 6vw, 44px) !important;
+    padding-right: clamp(18px, 6vw, 44px) !important;
+
+    /* 保证不会超出屏幕宽 */
+    max-width: calc(100vw - 24px) !important;
+    box-sizing: border-box !important;
+
+    /* 可选：手机端字体稍收一点，进一步避免换行 */
+    font-size: clamp(26px, 6.5vw, 36px) !important;
+  }
+
+}
+
+:root{
+  /* 只动 1~3 层：更干净、层次更清楚 */
+  --layer1-bg: rgba(255,255,255,.98);   /* drop/slot：干净白 */
+  --layer2-bg: rgba(255,253,250,.95);   /* 题块：奶白，和粉框更融 */
+  --layer3-bg: linear-gradient(180deg,
+                rgba(255,220,230,.78) 0%,
+                rgba(255,255,255,.92) 55%,
+                rgba(255,255,255,.88) 100%); /* 大容器：轻粉→白 */
+
+  /* 背景 tint 不改（你要求不动背景） */
+  --layer4-tint: rgba(255,255,255,.18);
+
+  /* 新增：统一描边/文字（不碰布局，只给“质感”） */
+  --ink: #24324A;                 /* 主文字：蓝灰 */
+  --dash: rgba(36,50,74,.22);     /* 虚线框：蓝灰半透明 */
+  --stroke: rgba(36,50,74,.14);   /* 实线边：更淡 */
+}
+
+/* 第一层 */
+.drop-box,
+.slot{
+  background: var(--layer1-bg) !important;
+}
+
+/* 第二层 */
+#q1a.section,
+#q1b.section{
+  background: var(--layer2-bg) !important;
+}
+
+/* 第三层 */
+.container > .section{
+  background: var(--layer3-bg) !important;
+}
+
+/* 第四层*/
+body{
+  background-image:
+    linear-gradient(var(--layer4-tint), var(--layer4-tint)),
+    radial-gradient(circle at 50% 35%, rgba(255,255,255,.65) 0%, rgba(255,255,255,0) 45%),
+    radial-gradient(ellipse at center, rgba(0,0,0,.10) 0%, rgba(0,0,0,0) 55%),
+    url("../images/C16_BG_Phone.png");
+}
+
+body{ color: var(--ink); }  /* 全局文字从纯黑变蓝灰 */
+
+.drop-box, .slot{
+  border-color: var(--dash) !important; /* 把 #aaa 的灰虚线换成蓝灰，更贴背景 */
+}
+
+#q1a.section, #q1b.section{
+  border: 1px solid var(--stroke);
+}
+
 
